@@ -10,6 +10,15 @@ try:
 except locale.Error:
     pass
 
+def formatar_data_feriado(data_iso):
+    """
+    Converte data no formato ISO (YYYY-MM-DD) para o formato DD/MM/YYYY
+    """
+    partes = data_iso.split('-')
+    if len(partes) == 3:
+        return f"{partes[2]}/{partes[1]}/{partes[0]}"
+    return data_iso  # Retorna o original se não conseguir formatar
+
 def listar_feriados(ano, estado, token, mes=None):
     """
     Função para obter os feriados nacionais e estaduais.

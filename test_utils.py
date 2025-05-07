@@ -1,5 +1,5 @@
 import pytest
-from utils import calcular_quinto_dia_util, formatar_data_extenso
+from utils import calcular_quinto_dia_util, formatar_data_extenso, formatar_data_feriado
 
 # Substitua por um token válido para rodar testes reais
 TOKEN_FAKE = "123456789"
@@ -33,6 +33,17 @@ def test_formatar_data_extenso():
     assert data_formatada == "12/03/2025"
     assert dia_semana == "Quarta-feira"
     assert mes_nome == "Março"
+
+def test_formatar_data_feriado():
+    # Teste com data válida
+    data_iso = "2025-01-01"
+    data_formatada = formatar_data_feriado(data_iso)
+    assert data_formatada == "01/01/2025"
+    
+    # Teste com formato inválido (deve retornar o mesmo valor)
+    data_invalida = "2025/01/01"
+    resultado = formatar_data_feriado(data_invalida)
+    assert resultado == data_invalida
 
 if __name__ == "__main__":
     pytest.main([__file__])

@@ -165,6 +165,15 @@ def atualizar_resultado_text(texto):
     resultado_text.insert('1.0', texto)
     resultado_text.config(state='disabled')
 
+def formatar_data_feriado(data_iso):
+    """
+    Converte data no formato ISO (YYYY-MM-DD) para o formato DD/MM/YYYY
+    """
+    partes = data_iso.split('-')
+    if len(partes) == 3:
+        return f"{partes[2]}/{partes[1]}/{partes[0]}"
+    return data_iso  # Retorna o original se não conseguir formatar
+
 # Calcula feriados para mês ou ano
 def calcular_feriado():
     uf = uf_var.get().strip()
@@ -202,14 +211,15 @@ def calcular_feriado():
             feriados = executar_tarefa(listar_feriados, ano, uf, token, mes)
         
         if feriados:
-            # Monta texto
+            # Monta texto com data formatada
             text = ""
             for f in feriados:
-                date = f['date']
+                date_iso = f['date']
+                date_formatted = formatar_data_feriado(date_iso)
                 name = f['name']
                 type_ = f.get('type', '')
                 level = f.get('level', '')
-                text += f"{date} - {name} ({type_}, {level})\n"
+                text += f"{date_formatted} - {name} ({type_}, {level})\n"
             if not text:
                 text = "Nenhum feriado encontrado."
             
@@ -254,8 +264,8 @@ style.configure('TButton', font=('Segoe UI', 10, 'bold'))
 
 # Configuração da janela
 root.title("Quinto Dia Útil")
-root.geometry("400x480")
-root.minsize(400, 480)
+root.geometry("615x480")
+root.minsize(615, 480)
 root.resizable(True, True)
 
 # Layout principal
