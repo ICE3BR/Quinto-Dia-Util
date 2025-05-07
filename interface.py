@@ -1,6 +1,11 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from utils import calcular_quinto_dia_util, calcular_quintos_dias_util_ano_completo, formatar_data_extenso
+from utils import (
+    calcular_quinto_dia_util,
+    calcular_quintos_dias_util_ano_completo,
+    formatar_data_extenso,
+    listar_feriados
+)
 import os
 import csv
 from dotenv import load_dotenv
@@ -31,11 +36,10 @@ uf_var.trace_add('write', lambda *args: uf_var.set(uf_var.get().upper()))
 def toggle_mes_entry():
     mes_entry.configure(state='disabled' if todos_var.get() else 'normal')
 
-# Função de cálculo
-def calcular():
+# Calcula quinto dia útil
+def calcular_quinto():
     global resultado_dados
     resultado_dados = []
-
     uf = uf_var.get().strip()
     ano_str = ano_var.get().strip()
     contar_sab = sabado_var.get()
@@ -52,7 +56,6 @@ def calcular():
         messagebox.showwarning("Entrada inválida", "Ano inválido.", parent=root)
         return
 
-    # Monta resultado
     text = ""
     if calc_ano:
         resultados = calcular_quintos_dias_util_ano_completo(ano, uf, token, contar_sab)
@@ -88,14 +91,57 @@ def calcular():
     resultado_text.config(state='disabled')
     root.deiconify()
 
+# Calcula feriados para mês ou ano
+def calcular_feriado():
+    uf = uf_var.get().strip()
+    ano_str = ano_var.get().strip()
+    calc_ano = todos_var.get()
+    mes_str = mes_var.get().strip()
+    if len(uf) != 2 or not uf.isalpha():
+        messagebox.showwarning("Entrada inválida", "Informe a UF com 2 letras.", parent=root)
+        return
+    try:
+        ano = int(ano_str)
+    except ValueError:
+        messagebox.showwarning("Entrada inválida", "Ano inválido.", parent=root)
+        return
+
+    # Obtém feriados
+    if calc_ano:
+        feriados = listar_feriados(ano, uf, token)
+    else:
+        try:
+            mes = int(mes_str)
+            if not 1 <= mes <= 12:
+                raise ValueError
+        except ValueError:
+            messagebox.showwarning("Entrada inválida", "Informe um mês válido (1-12).", parent=root)
+            return
+        feriados = listar_feriados(ano, uf, token, mes)
+
+    # Monta texto
+    text = ""
+    for f in feriados:
+        date = f['date']
+        name = f['name']
+        type_ = f.get('type', '')
+        level = f.get('level', '')
+        text += f"{date} - {name} ({type_}, {level})\n"
+    if not text:
+        text = "Nenhum feriado encontrado."
+    resultado_text.config(state='normal')
+    resultado_text.delete('1.0', tk.END)
+    resultado_text.insert('1.0', text)
+    resultado_text.config(state='disabled')
+    root.deiconify()
+
 # Função para exportar CSV
 def exportar_csv():
     if not resultado_dados:
         messagebox.showwarning("Sem dados", "Realize um cálculo antes de exportar.", parent=root)
         return
     path = filedialog.asksaveasfilename(defaultextension=".csv",
-                                        filetypes=[("CSV Files", "*.csv")],
-                                        title="Salvar como")
+                                        filetypes=[("CSV Files", "*.csv")], title="Salvar como")
     if path:
         with open(path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=['mes','numero_mes','data','dia_semana'])
@@ -113,19 +159,18 @@ style.configure('TButton', font=('Segoe UI', 10, 'bold'))
 
 # Configuração da janela
 root.title("Quinto Dia Útil")
-root.geometry("400x440")
-root.minsize(400, 440)
+root.geometry("400x480")
+root.minsize(400, 480)
 root.resizable(True, True)
 
 # Layout principal
 main_frame = ttk.Frame(root, padding=20)
 main_frame.pack(fill='both', expand=True)
 
-# Formulário reorganizado
+# Formulário reorganizado com UF, Ano, Mês em linha única
 form = ttk.Frame(main_frame)
 form.pack(anchor='n', pady=(0, 10))
 
-# Primeiro linha: UF, Ano, Mês
 ttk.Label(form, text="UF:").grid(row=0, column=0, sticky='e', padx=5, pady=2)
 uf_entry = ttk.Entry(form, width=5, textvariable=uf_var)
 uf_entry.grid(row=0, column=1, sticky='w', pady=2)
@@ -138,15 +183,16 @@ ttk.Label(form, text="Mês:").grid(row=0, column=4, sticky='e', padx=15, pady=2)
 mes_entry = ttk.Entry(form, width=10, textvariable=mes_var)
 mes_entry.grid(row=0, column=5, sticky='w', pady=2)
 
-# Segunda linha: checkbuttons
+# Checkboxes
 ttk.Checkbutton(form, text="Contar sábados", variable=sabado_var).grid(row=1, column=0, columnspan=3, sticky='w', padx=5, pady=5)
 ttk.Checkbutton(form, text="Calcular 12 meses", variable=todos_var, command=toggle_mes_entry).grid(row=1, column=3, columnspan=3, sticky='w', padx=5, pady=5)
 
-# Botões
+# Botões de ação
 btns = ttk.Frame(main_frame)
 btns.pack(pady=10)
 
-ttk.Button(btns, text="Calcular", command=calcular).pack(side='left', padx=5)
+ttk.Button(btns, text="Calcular Quinto-Dia-Util", command=calcular_quinto).pack(side='left', padx=5)
+ttk.Button(btns, text="Calcular Feriado", command=calcular_feriado).pack(side='left', padx=5)
 ttk.Button(btns, text="Exportar CSV", command=exportar_csv).pack(side='left', padx=5)
 
 # Área de resultado

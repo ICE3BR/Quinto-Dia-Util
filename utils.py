@@ -10,6 +10,29 @@ try:
 except locale.Error:
     pass
 
+def listar_feriados(ano, estado, token, mes=None):
+    """
+    Função para obter os feriados nacionais e estaduais.
+    - ano: Ano a ser consultado.
+    - estado: Código da UF (ex: 'SP', 'RJ').
+    - mes: Mês (opcional, se informado retorna os feriados do mês específico).
+    """
+    url = f"https://api.invertexto.com/v1/holidays/{ano}"
+    headers = {'Authorization': f'Bearer {token}'}
+    params = {'state': estado} if estado else {}
+
+    response = requests.get(url, headers=headers, params=params)
+    
+    if response.status_code != 200:
+        raise Exception("Erro ao obter feriados")
+
+    feriados = response.json()
+    if mes:
+        # Filtra os feriados do mês se 'mes' for passado
+        feriados = [f for f in feriados if int(f['date'].split('-')[1]) == mes]
+    
+    return feriados
+
 
 def obter_feriados(ano, estado, token):
     url = f"https://api.invertexto.com/v1/holidays/{ano}?token={token}&state={estado}"
